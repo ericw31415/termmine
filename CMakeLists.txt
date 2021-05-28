@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wshadow" CACHE STRING
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wshadow -pedantic" CACHE STRING
     "Flags used by the C compiler during all build types")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2" CACHE STRING
     "Flags used by the C compiler during RELEASE builds.")
