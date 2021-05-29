@@ -21,20 +21,22 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
-#ifndef PLAY_HXX
-#define PLAY_HXX
 
-#include "Game.hxx"
+#ifndef GAME_HXX
+#define GAME_HXX
 
 namespace termmine {
-struct Cursor {
-    int x;
-    int y;
-};
+class Game final {
+public:
+    Game(int rows, int cols) noexcept : rows_{rows}, cols_{cols} {}
 
-void draw_board(WINDOW* board, const Game& game);
-void update_board(WINDOW* board, const Game& game, const Cursor& cursor);
-void start_game();
+    int rows() const noexcept;
+    int cols() const noexcept;
+
+private:
+    const int rows_;
+    const int cols_;
+};
 }
 
 #endif

@@ -30,6 +30,8 @@ int main()
     initscr();
     noecho();
     raw();
+    keypad(stdscr, true);
+    curs_set(0); // hide cursor and draw one manually later
     start_color();
     termmine::start_game();
     endwin();
