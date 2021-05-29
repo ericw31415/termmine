@@ -32,8 +32,10 @@ struct Cursor {
     int y;
 };
 
-void draw_board(WINDOW* board, const Game& game);
-void update_board(WINDOW* board, const Game& game, const Cursor& cursor);
+void draw_board(WINDOW* board, const Game& game) noexcept;
+void draw_cursor(WINDOW* board, const Cursor& cursor) noexcept;
+void erase_cursor(WINDOW* board, const Cursor& cursor) noexcept;
+
 void start_game();
 }
 

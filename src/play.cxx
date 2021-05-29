@@ -46,7 +46,7 @@ unsigned encode_grid_pos(const int pos, const int max) noexcept
     return 0b11u;
 }
 
-chtype decode_grid_symbol(const unsigned encoded)
+chtype decode_grid_symbol(const unsigned encoded) noexcept
 {
     switch (encoded) {
     case 0b0000u:
@@ -78,29 +78,13 @@ chtype decode_grid_symbol(const unsigned encoded)
 
     case 0b1010u:
         return ACS_PLUS;
-    case 0b1111u:
+    default:
         return ' ';
     }
 }
-/*
-void update_board(WINDOW* board, int x, int y)
-{
-    for (int i = 0; i < board_width * 2 + 1; ++i) {
-        for (int j = 0; j < board_height * 2 + 1; ++j) {
-            mvwchgat(board, y, x, 1, A_REVERSE, 0, NULL);
-            if (i % 2 == 0 && j % 2 == 0) {
-                if (i == x && j == y)
-                    mvwaddch(board, j, i, ACS_PLUS | A_REVERSE);
-                else
-                    mvwaddch(board, j, i, ACS_PLUS);
-            }
-        }
-    }
-    wrefresh(board);
-}*/
 }
 
-void draw_board(WINDOW* const board, const Game& game)
+void draw_board(WINDOW* const board, const Game& game) noexcept
 {
     for (int i = 0; i < game.rows() * 2 + 1; ++i) {
         for (int j = 0; j < game.cols() * 2 + 1; ++j) {
@@ -113,8 +97,17 @@ void draw_board(WINDOW* const board, const Game& game)
     }
 }
 
-void update_board(WINDOW* const board, const Game& game, const Cursor& cursor)
-{}
+void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
+{
+    mvwchgat(board, cursor.y * 2 + 1, cursor.x * 2 + 1, 1, A_REVERSE, 0,
+             nullptr);
+}
+
+void erase_cursor(WINDOW* const board, const Cursor& cursor) noexcept
+{
+    mvwchgat(board, cursor.y * 2 + 1, cursor.x * 2 + 1, 1, A_NORMAL, 0,
+             nullptr);
+}
 
 void start_game()
 {
@@ -126,31 +119,36 @@ void start_game()
     const termmine::Game game{10, 15};
     WINDOW* const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1, 3,
                                  0);
+
     draw_board(board, game);
-    // init_pair(1, COLOR_BLACK, COLOR_RED);
-    // wbkgd(board, ACS_PLUS | COLOR_PAIR(1));
     wrefresh(board);
 
-    int x = 0;
-    int y = 0;
-
+    Cursor cursor{0, 0};
     while (true) {
-        // update_board(board, x, y);
-        int c = getch();
+        draw_cursor(board, cursor);
+        wrefresh(board);
 
+        int c = getch();
+        if (c == KEY_LEFT || c == KEY_RIGHT || c == KEY_UP || c == KEY_DOWN)
+            erase_cursor(board, cursor);
         switch (c) {
         case KEY_LEFT:
-            --x;
+            if (cursor.x > 0)
+                --cursor.x;
             break;
         case KEY_RIGHT:
-            ++x;
+            if (cursor.x < game.cols() - 1)
+                ++cursor.x;
             break;
         case KEY_UP:
-            --y;
+            if (cursor.y > 0)
+                --cursor.y;
             break;
         case KEY_DOWN:
-            ++y;
+            if (cursor.y < game.rows() - 1)
+                ++cursor.y;
             break;
+
         case 'q':
             return;
         }
