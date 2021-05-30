@@ -38,6 +38,10 @@ public:
     const std::vector<std::vector<unsigned char>>& board() const noexcept;
 
     bool has_mine(int row, int col) const noexcept;
+    bool has_flag(int row, int col) const noexcept;
+    bool has_mark(int row, int col) const noexcept;
+    void flag_cell(int row, int col) noexcept;
+    void mark_cell(int row, int col) noexcept;
 
 private:
     const int rows_;
@@ -52,7 +56,7 @@ private:
     * If the cell has a mine - 1 bit
     * If the cell is opened - 1 bit
     * If the cell is flagged - 1 bit
-    * If the cell is uncertain - 1 bit
+    * If the cell is marked - 1 bit
     * Number of adjacent mines - 4 bits
     */
     std::vector<std::vector<unsigned char>> board_;

@@ -72,9 +72,31 @@ bool Game::has_mine(const int row, const int col) const noexcept
     return board_[row][col] & (1u << 7);
 }
 
+bool Game::has_flag(const int row, const int col) const noexcept
+{
+    return board_[row][col] & (1u << 5);
+}
+
+bool Game::has_mark(const int row, const int col) const noexcept
+{
+    return board_[row][col] & (1u << 4);
+}
+
+void Game::flag_cell(const int row, const int col) noexcept
+{
+    board_[row][col] &= ~(1u << 4); // unmark cell first
+    board_[row][col] ^= 1u << 5;
+}
+
+void Game::mark_cell(const int row, const int col) noexcept
+{
+    board_[row][col] &= ~(1u << 5); // unflag cell first
+    board_[row][col] ^= 1u << 4;
+}
+
 void Game::set_mine(const int row, const int col) noexcept
 {
-    board_[row][col] |= (1u << 7);
+    board_[row][col] |= 1u << 7;
 }
 
 std::vector<std::pair<int, int>> Game::adjacent_cells(

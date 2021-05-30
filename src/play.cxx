@@ -97,6 +97,29 @@ void draw_board(WINDOW* const board, const Game& game) noexcept
     }
 }
 
+void update_board(WINDOW* const board, const Game& game) noexcept
+{
+    for (int i = 0; i < game.rows(); ++i) {
+        for (int j = 0; j < game.cols(); ++j) {
+            if (game.has_flag(i, j))
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, 'P');
+            else if (game.has_mark(i, j))
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, '?');
+            else
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, ' ');
+        }
+    }
+
+#ifdef NDEBUG
+    move(game.rows() * 2 + 4, 0);
+    for (auto& row : game.board()) {
+        for (auto col : row)
+            printw("%02x ", col);
+        addch('\n');
+    }
+#endif
+}
+
 void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
 {
     mvwchgat(board, cursor.y * 2 + 1, cursor.x * 2 + 1, 1, A_REVERSE, 0,
@@ -116,25 +139,16 @@ void start_game()
     printw("Time:\n");
     refresh();
 
-    const termmine::Game game{10, 15, 10};
+    termmine::Game game{10, 15, 25};
     WINDOW* const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1, 3,
                                  0);
 
     draw_board(board, game);
     wrefresh(board);
 
-#ifdef NDEBUG
-    move(game.rows() * 2 + 4, 0);
-    for (auto& row : game.board()) {
-        for (auto col : row) {
-            printw("%02x ", col);
-        }
-        printw("\n");
-    }
-#endif
-
     Cursor cursor{0, 0};
     while (true) {
+        update_board(board, game);
         draw_cursor(board, cursor);
         wrefresh(board);
 
@@ -157,6 +171,13 @@ void start_game()
         case KEY_DOWN:
             if (cursor.y < game.rows() - 1)
                 ++cursor.y;
+            break;
+
+        case '1':
+            game.flag_cell(cursor.y, cursor.x);
+            break;
+        case '2':
+            game.mark_cell(cursor.y, cursor.x);
             break;
 
         case 'q':
