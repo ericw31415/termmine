@@ -28,6 +28,19 @@
 
 namespace termmine {
 namespace {
+enum Color {
+    color_unopened = 1,
+    color_flagged,
+    color_opened
+};
+
+void define_colors()
+{
+    init_pair(color_unopened, COLOR_BLACK, COLOR_WHITE);
+    init_pair(color_flagged, COLOR_RED, COLOR_WHITE);
+    init_pair(color_opened, COLOR_WHITE, COLOR_BLACK);
+}
+
 /*
 * Encode grid position to simplify draw_board() conditionals.
 * Determines if pos is on the board edge, intersection, or other gridline.
@@ -101,15 +114,25 @@ void update_board(WINDOW* const board, const Game& game) noexcept
 {
     for (int i = 0; i < game.rows(); ++i) {
         for (int j = 0; j < game.cols(); ++j) {
-            if (game.has_flag(i, j))
-                mvwaddch(board, i * 2 + 1, j * 2 + 1, 'P');
-            else if (game.has_mark(i, j))
-                mvwaddch(board, i * 2 + 1, j * 2 + 1, '?');
-            else
+            if (game.is_open(i, j)) {
+                wattron(board, COLOR_PAIR(color_opened));
                 mvwaddch(board, i * 2 + 1, j * 2 + 1, ' ');
+                wattroff(board, COLOR_PAIR(3));
+            } else if (game.has_flag(i, j)) {
+                wattron(board, COLOR_PAIR(color_flagged));
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, 'P');
+                wattroff(board, COLOR_PAIR(2));
+            } else if (game.has_mark(i, j)) {
+                wattron(board, COLOR_PAIR(color_unopened));
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, '?');
+                wattroff(board, COLOR_PAIR(1));
+            } else {
+                wattron(board, COLOR_PAIR(color_unopened));
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, ' ');
+                wattroff(board, COLOR_PAIR(color_unopened));
+            }
         }
     }
-
 #ifdef NDEBUG
     move(game.rows() * 2 + 4, 0);
     for (auto& row : game.board()) {
@@ -122,19 +145,14 @@ void update_board(WINDOW* const board, const Game& game) noexcept
 
 void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
 {
-    mvwchgat(board, cursor.y * 2 + 1, cursor.x * 2 + 1, 1, A_REVERSE, 0,
-             nullptr);
-}
-
-void erase_cursor(WINDOW* const board, const Cursor& cursor) noexcept
-{
-    mvwchgat(board, cursor.y * 2 + 1, cursor.x * 2 + 1, 1, A_NORMAL, 0,
-             nullptr);
+    wmove(board, cursor.y * 2 + 1, cursor.x * 2 + 1);
+    wchgat(board, 1, A_REVERSE, PAIR_NUMBER(winch(board) & A_COLOR), nullptr);
 }
 
 void start_game()
 {
     clear();
+    define_colors();
     printw("Mines remaining:\n");
     printw("Time:\n");
     refresh();
@@ -153,8 +171,6 @@ void start_game()
         wrefresh(board);
 
         int c = getch();
-        if (c == KEY_LEFT || c == KEY_RIGHT || c == KEY_UP || c == KEY_DOWN)
-            erase_cursor(board, cursor);
         switch (c) {
         case KEY_LEFT:
             if (cursor.x > 0)
@@ -173,6 +189,11 @@ void start_game()
                 ++cursor.y;
             break;
 
+        case ' ':
+            if (!game.has_flag(cursor.y, cursor.x)
+                && !game.has_mark(cursor.y, cursor.x))
+                game.open_cell(cursor.y, cursor.x);
+            break;
         case '1':
             game.flag_cell(cursor.y, cursor.x);
             break;

@@ -72,6 +72,11 @@ bool Game::has_mine(const int row, const int col) const noexcept
     return board_[row][col] & (1u << 7);
 }
 
+bool Game::is_open(const int row, const int col) const noexcept
+{
+    return board_[row][col] & (1u << 6);
+}
+
 bool Game::has_flag(const int row, const int col) const noexcept
 {
     return board_[row][col] & (1u << 5);
@@ -80,6 +85,11 @@ bool Game::has_flag(const int row, const int col) const noexcept
 bool Game::has_mark(const int row, const int col) const noexcept
 {
     return board_[row][col] & (1u << 4);
+}
+
+void Game::open_cell(const int row, const int col) noexcept
+{
+    board_[row][col] ^= 1u << 6;
 }
 
 void Game::flag_cell(const int row, const int col) noexcept

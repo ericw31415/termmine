@@ -38,8 +38,10 @@ public:
     const std::vector<std::vector<unsigned char>>& board() const noexcept;
 
     bool has_mine(int row, int col) const noexcept;
+    bool is_open(int row, int col) const noexcept;
     bool has_flag(int row, int col) const noexcept;
     bool has_mark(int row, int col) const noexcept;
+    void open_cell(int row, int col) noexcept;
     void flag_cell(int row, int col) noexcept;
     void mark_cell(int row, int col) noexcept;
 
