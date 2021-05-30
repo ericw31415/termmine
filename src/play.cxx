@@ -35,7 +35,7 @@ namespace {
 * pos is a horizontal or vertical position.
 * max is the width or height of the board.
 */
-unsigned encode_grid_pos(const int pos, const int max) noexcept
+unsigned char encode_grid_pos(const int pos, const int max) noexcept
 {
     if (pos == 0)
         return 0b00u;
@@ -46,7 +46,7 @@ unsigned encode_grid_pos(const int pos, const int max) noexcept
     return 0b11u;
 }
 
-chtype decode_grid_symbol(const unsigned encoded) noexcept
+chtype decode_grid_symbol(const unsigned char encoded) noexcept
 {
     switch (encoded) {
     case 0b0000u:
@@ -89,7 +89,7 @@ void draw_board(WINDOW* const board, const Game& game) noexcept
     for (int i = 0; i < game.rows() * 2 + 1; ++i) {
         for (int j = 0; j < game.cols() * 2 + 1; ++j) {
             // Encode each position into 4 bits to simplify check
-            const unsigned encoded = (encode_grid_pos(i, game.rows()) << 2)
+            const unsigned char encoded = (encode_grid_pos(i, game.rows()) << 2)
                 | encode_grid_pos(j, game.cols());
 
             mvwaddch(board, i, j, decode_grid_symbol(encoded));
@@ -116,12 +116,22 @@ void start_game()
     printw("Time:\n");
     refresh();
 
-    const termmine::Game game{10, 15};
+    const termmine::Game game{10, 15, 10};
     WINDOW* const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1, 3,
                                  0);
 
     draw_board(board, game);
     wrefresh(board);
+
+#ifdef NDEBUG
+    move(game.rows() * 2 + 4, 0);
+    for (auto& row : game.board()) {
+        for (auto col : row) {
+            printw("%02x ", col);
+        }
+        printw("\n");
+    }
+#endif
 
     Cursor cursor{0, 0};
     while (true) {

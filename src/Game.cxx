@@ -23,8 +23,35 @@
 */
 
 #include "Game.hxx"
+#include <algorithm>
+#include <random>
+#include <utility>
+#include <vector>
 
 namespace termmine {
+Game::Game(const int rows, const int cols, const int mines) noexcept
+    : rows_{rows},
+      cols_{cols},
+      mines_{mines},
+      board_(rows, std::vector<unsigned char>(cols, 0))
+{
+    // Assign a number to each cell and randomize mine placement
+    std::vector<int> cells;
+    cells.reserve(rows * cols);
+    for (int i = 0; i < rows * cols; ++i)
+        cells.push_back(i);
+
+    std::mt19937 gen{std::random_device{}()};
+    std::ranges::shuffle(cells, gen);
+    for (int i = 0; i < mines; ++i)
+        set_mine(cells[i] / cols, cells[i] % cols);
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j)
+            set_mines_count(i, j);
+    }
+}
+
 int Game::rows() const noexcept
 {
     return rows_;
@@ -33,5 +60,45 @@ int Game::rows() const noexcept
 int Game::cols() const noexcept
 {
     return cols_;
+}
+
+const std::vector<std::vector<unsigned char>>& Game::board() const noexcept
+{
+    return board_;
+}
+
+bool Game::has_mine(const int row, const int col) const noexcept
+{
+    return board_[row][col] & (1u << 7);
+}
+
+void Game::set_mine(const int row, const int col) noexcept
+{
+    board_[row][col] |= (1u << 7);
+}
+
+std::vector<std::pair<int, int>> Game::adjacent_cells(
+    const int row, const int col) const noexcept
+{
+    std::vector<std::pair<int, int>> adj;
+
+    for (int i = row - 1; i <= row + 1; ++i) {
+        for (int j = col - 1; j <= col + 1; ++j) {
+            if (i >= 0 && i < rows_ && j >= 0 && j < cols_
+                && (i != row || j != col))
+            adj.push_back(std::make_pair(i, j));
+        }
+    }
+    return adj;
+}
+
+void Game::set_mines_count(const int row, const int col) noexcept
+{
+    int num_mines = 0;
+    for (auto& adj : adjacent_cells(row, col)) {
+        if (has_mine(adj.first, adj.second))
+            ++num_mines;
+    }
+    board_[row][col] |= num_mines;
 }
 }

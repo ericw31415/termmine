@@ -25,17 +25,42 @@
 #ifndef GAME_HXX
 #define GAME_HXX
 
+#include <utility>
+#include <vector>
+
 namespace termmine {
 class Game final {
 public:
-    Game(int rows, int cols) noexcept : rows_{rows}, cols_{cols} {}
+    Game(int rows, int cols, int mines) noexcept;
 
     int rows() const noexcept;
     int cols() const noexcept;
+    const std::vector<std::vector<unsigned char>>& board() const noexcept;
+
+    bool has_mine(int row, int col) const noexcept;
 
 private:
     const int rows_;
     const int cols_;
+
+    const int mines_;
+
+    /*
+    * Uses bit packing to store each cell's information. Each bit represents,
+    * from MSB to LSB:
+    *
+    * If the cell has a mine - 1 bit
+    * If the cell is opened - 1 bit
+    * If the cell is flagged - 1 bit
+    * If the cell is uncertain - 1 bit
+    * Number of adjacent mines - 4 bits
+    */
+    std::vector<std::vector<unsigned char>> board_;
+
+    void set_mine(int row, int col) noexcept;
+    std::vector<std::pair<int, int>> adjacent_cells(int row, int col)
+        const noexcept;
+    void set_mines_count(int row, int col) noexcept;
 };
 }
 
