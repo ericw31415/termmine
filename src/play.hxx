@@ -37,7 +37,8 @@ void draw_board(WINDOW* board, const Game& game) noexcept;
 void update_board(WINDOW* board, const Game& game) noexcept;
 void draw_cursor(WINDOW* board, const Cursor& cursor) noexcept;
 
-void start_game();
+void new_game();
+void game_menu();
 }
 
 #endif

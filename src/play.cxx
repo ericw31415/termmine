@@ -32,7 +32,17 @@ enum Color {
     color_unopened = 1,
     color_flagged,
     color_opened,
-    color_mine
+    color_mine,
+    color_mine_wrong,
+
+    color_one,
+    color_two,
+    color_three,
+    color_four,
+    color_five,
+    color_six,
+    color_seven,
+    color_eight
 };
 
 void define_colors()
@@ -41,10 +51,30 @@ void define_colors()
     init_pair(color_flagged, COLOR_RED, COLOR_WHITE);
     init_pair(color_opened, COLOR_WHITE, COLOR_BLACK);
     init_pair(color_mine, COLOR_BLACK, COLOR_RED);
+    init_pair(color_mine_wrong, COLOR_RED, COLOR_BLACK);
 
-    init_pair(color_unopened + 10, COLOR_BLACK, COLOR_YELLOW);
-    init_pair(color_flagged + 10, COLOR_RED, COLOR_YELLOW);
-    init_pair(color_opened + 10, COLOR_WHITE, COLOR_YELLOW);
+    // Cell number colors
+    init_pair(color_one, COLOR_BLUE, COLOR_BLACK);
+    init_pair(color_two, COLOR_GREEN, COLOR_BLACK);
+    init_pair(color_three, COLOR_RED, COLOR_BLACK);
+    init_pair(color_four, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(color_five, COLOR_RED, COLOR_BLACK);
+    init_pair(color_six, COLOR_CYAN, COLOR_BLACK);
+    init_pair(color_seven, COLOR_WHITE, COLOR_BLACK);
+    init_pair(color_eight, COLOR_WHITE, COLOR_BLACK);
+
+    init_pair(color_unopened + 20, COLOR_BLACK, COLOR_YELLOW);
+    init_pair(color_flagged + 20, COLOR_RED, COLOR_YELLOW);
+    init_pair(color_opened + 20, COLOR_WHITE, COLOR_YELLOW);
+
+    init_pair(color_one + 20, COLOR_BLUE, COLOR_YELLOW);
+    init_pair(color_two + 20, COLOR_GREEN, COLOR_YELLOW);
+    init_pair(color_three + 20, COLOR_RED, COLOR_YELLOW);
+    init_pair(color_four + 20, COLOR_MAGENTA, COLOR_YELLOW);
+    init_pair(color_five + 20, COLOR_RED, COLOR_YELLOW);
+    init_pair(color_six + 20, COLOR_CYAN, COLOR_YELLOW);
+    init_pair(color_seven + 20, COLOR_WHITE, COLOR_YELLOW);
+    init_pair(color_eight + 20, COLOR_WHITE, COLOR_YELLOW);
 }
 
 /*
@@ -128,15 +158,29 @@ void update_board(WINDOW* const board, const Game& game) noexcept
                     waddch(board, '@');
                     wattroff(board, COLOR_PAIR(color_mine));
                 } else {
-                    wattron(board, COLOR_PAIR(color_opened));
                     const int adj_mines = game.num_adj_mines(i, j);
+                    chtype color = COLOR_PAIR(adj_mines > 0
+                        ? adj_mines + color_one - 1 : color_opened);
+
+                    wattron(board, color);
                     waddch(board, adj_mines > 0 ? '0' + adj_mines : ' ');
-                    wattroff(board, COLOR_PAIR(color_opened));
+                    wattroff(board, color);
                 }
+            } else if (game.is_over() && game.has_mine(i, j)) {
+                wattron(board, COLOR_PAIR(color_opened));
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, '@');
+                wattroff(board, COLOR_PAIR(color_opened));
             } else if (game.has_flag(i, j)) {
-                wattron(board, COLOR_PAIR(color_flagged));
-                mvwaddch(board, i * 2 + 1, j * 2 + 1, 'P');
-                wattroff(board, COLOR_PAIR(color_flagged));
+                if (game.is_over() && !game.has_mine(i, j)) {
+                wattron(board, COLOR_PAIR(color_mine_wrong));
+                mvwaddch(board, i * 2 + 1, j * 2 + 1, 'X');
+                wattroff(board, COLOR_PAIR(color_mine_wrong));
+
+                } else {
+                    wattron(board, COLOR_PAIR(color_flagged));
+                    mvwaddch(board, i * 2 + 1, j * 2 + 1, 'P');
+                    wattroff(board, COLOR_PAIR(color_flagged));
+                }
             } else if (game.has_mark(i, j)) {
                 wattron(board, COLOR_PAIR(color_unopened));
                 mvwaddch(board, i * 2 + 1, j * 2 + 1, '?');
@@ -164,10 +208,10 @@ void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
 {
     wmove(board, cursor.y * 2 + 1, cursor.x * 2 + 1);
     const chtype attrs = winch(board);
-    wchgat(board, 1, attrs, PAIR_NUMBER(attrs & A_COLOR) + 10, nullptr);
+    wchgat(board, 1, attrs, PAIR_NUMBER(attrs & A_COLOR) + 20, nullptr);
 }
 
-void start_game()
+void new_game()
 {
     clear();
     define_colors();
@@ -183,6 +227,7 @@ void start_game()
     wrefresh(board);
 
     Cursor cursor{0, 0};
+    wattron(board, A_BOLD);
     while (!game.is_over()) {
         update_board(board, game);
         draw_cursor(board, cursor);
@@ -218,6 +263,7 @@ void start_game()
             break;
 
         case 'q':
+            move(game.rows() * 2 + 4, 0);
             return;
         }
     }
@@ -227,12 +273,28 @@ void start_game()
     printw("You exploded. Game over.\n");
     wrefresh(board);
     refresh();
+}
+
+void game_menu()
+{
     while (true) {
-        int c = getch();
-        switch (c) {
-            case 'q':
-                return;
-        }
+        new_game();
+
+        clrtoeol();
+        printw("Play again?\n");
+        bool valid;
+        do {
+            valid = true;
+            int c = getch();
+            switch (c) {
+                case 'n':
+                    break;
+                case 'q':
+                    return;
+                default:
+                    valid = false;
+            }
+        } while (!valid);
     }
 }
 }
