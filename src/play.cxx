@@ -39,6 +39,10 @@ void define_colors()
     init_pair(color_unopened, COLOR_BLACK, COLOR_WHITE);
     init_pair(color_flagged, COLOR_RED, COLOR_WHITE);
     init_pair(color_opened, COLOR_WHITE, COLOR_BLACK);
+
+    init_pair(color_unopened + 10, COLOR_BLACK, COLOR_YELLOW);
+    init_pair(color_flagged + 10, COLOR_RED, COLOR_YELLOW);
+    init_pair(color_opened + 10, COLOR_WHITE, COLOR_YELLOW);
 }
 
 /*
@@ -146,14 +150,15 @@ void update_board(WINDOW* const board, const Game& game) noexcept
 void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
 {
     wmove(board, cursor.y * 2 + 1, cursor.x * 2 + 1);
-    wchgat(board, 1, A_REVERSE, PAIR_NUMBER(winch(board) & A_COLOR), nullptr);
+    chtype attrs = winch(board);
+    wchgat(board, 1, attrs, PAIR_NUMBER(attrs & A_COLOR) + 10, nullptr);
 }
 
 void start_game()
 {
     clear();
     define_colors();
-    printw("Mines remaining:\n");
+    printw("Mines remaining: %d\n", COLOR_PAIRS);
     printw("Time:\n");
     refresh();
 
@@ -190,9 +195,7 @@ void start_game()
             break;
 
         case ' ':
-            if (!game.has_flag(cursor.y, cursor.x)
-                && !game.has_mark(cursor.y, cursor.x))
-                game.open_cell(cursor.y, cursor.x);
+            game.open_cell(cursor.y, cursor.x);
             break;
         case '1':
             game.flag_cell(cursor.y, cursor.x);

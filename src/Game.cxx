@@ -89,7 +89,9 @@ bool Game::has_mark(const int row, const int col) const noexcept
 
 void Game::open_cell(const int row, const int col) noexcept
 {
-    board_[row][col] ^= 1u << 6;
+    // prevent opening cell unless unflagged and unmarked
+    if (!has_flag(row, col) && !has_mark(row, col))
+        board_[row][col] |= 1u << 6;
 }
 
 void Game::flag_cell(const int row, const int col) noexcept
