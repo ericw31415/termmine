@@ -39,7 +39,9 @@ public:
     const std::vector<std::vector<unsigned char>>& board() const noexcept;
 
     bool is_over() const noexcept;
+    bool has_won() const noexcept;
     int flags() const noexcept;
+    void check_win() noexcept;
 
     bool has_mine(int row, int col) const noexcept;
     bool is_open(int row, int col) const noexcept;
@@ -70,7 +72,9 @@ private:
     std::vector<std::vector<unsigned char>> board_;
 
     bool game_over_ = false;
+    bool won_ = false;
     int cells_flagged_ = 0;
+    int open_cells_ = 0;
 
     void set_mine(int row, int col) noexcept;
     std::vector<std::pair<int, int>> adjacent_cells(int row, int col)

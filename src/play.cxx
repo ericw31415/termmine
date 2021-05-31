@@ -148,7 +148,9 @@ void draw_board(WINDOW* const board, const Game& game) noexcept
 
 void update_board(WINDOW* const board, const Game& game) noexcept
 {
-    mvprintw(0, 17, "%d", game.mines() - game.flags());
+    move(0, 17);
+    clrtoeol();
+    printw("%d", game.mines() - game.flags());
     for (int i = 0; i < game.rows(); ++i) {
         for (int j = 0; j < game.cols(); ++j) {
             if (game.is_open(i, j)) {
@@ -166,16 +168,16 @@ void update_board(WINDOW* const board, const Game& game) noexcept
                     waddch(board, adj_mines > 0 ? '0' + adj_mines : ' ');
                     wattroff(board, color);
                 }
-            } else if (game.is_over() && game.has_mine(i, j)) {
+            } else if (game.is_over() && !game.has_won()
+                && game.has_mine(i, j)) {
                 wattron(board, COLOR_PAIR(color_opened));
                 mvwaddch(board, i * 2 + 1, j * 2 + 1, '@');
                 wattroff(board, COLOR_PAIR(color_opened));
             } else if (game.has_flag(i, j)) {
                 if (game.is_over() && !game.has_mine(i, j)) {
-                wattron(board, COLOR_PAIR(color_mine_wrong));
-                mvwaddch(board, i * 2 + 1, j * 2 + 1, 'X');
-                wattroff(board, COLOR_PAIR(color_mine_wrong));
-
+                    wattron(board, COLOR_PAIR(color_mine_wrong));
+                    mvwaddch(board, i * 2 + 1, j * 2 + 1, 'X');
+                    wattroff(board, COLOR_PAIR(color_mine_wrong));
                 } else {
                     wattron(board, COLOR_PAIR(color_flagged));
                     mvwaddch(board, i * 2 + 1, j * 2 + 1, 'P');
@@ -219,7 +221,7 @@ void new_game()
     printw("Time:\n");
     refresh();
 
-    termmine::Game game{10, 15, 25};
+    termmine::Game game{4, 4, 2};
     WINDOW* const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1, 3,
                                  0);
 
@@ -254,6 +256,7 @@ void new_game()
 
         case ' ':
             game.open_cell(cursor.y, cursor.x);
+            game.check_win();
             break;
         case '1':
             game.flag_cell(cursor.y, cursor.x);
@@ -270,7 +273,10 @@ void new_game()
 
     update_board(board, game);
     move(game.rows() * 2 + 4, 0);
-    printw("You exploded. Game over.\n");
+    if (game.has_won())
+        printw("You swept through the minefield safely. You won!\n");
+    else
+        printw("You exploded. Game over.\n");
     wrefresh(board);
     refresh();
 }

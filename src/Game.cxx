@@ -77,9 +77,31 @@ bool Game::is_over() const noexcept
     return game_over_;
 }
 
+bool Game::has_won() const noexcept
+{
+    return won_;
+}
+
 int Game::flags() const noexcept
 {
     return cells_flagged_;
+}
+
+void Game::check_win() noexcept
+{
+    if (open_cells_ + mines_ == rows_ * cols_) {
+        won_ = true;
+        game_over_ = true;
+
+        // autoflag all unflagged cells
+        for (auto& row : board_) {
+            for (auto& col : row) {
+                if (col & (1u << 7))
+                    col |= 1u << 5;
+            }
+        }
+        cells_flagged_ = mines_;
+    }
 }
 
 bool Game::has_mine(const int row, const int col) const noexcept
@@ -113,6 +135,7 @@ void Game::open_cell(const int row, const int col) noexcept
         return;
 
     board_[row][col] |= 1u << 6; // set opened flag
+    ++open_cells_;
     if (has_mine(row, col)) {
         game_over_ = true;
         return;
@@ -126,6 +149,9 @@ void Game::open_cell(const int row, const int col) noexcept
 
 void Game::flag_cell(const int row, const int col) noexcept
 {
+    if (is_open(row, col))
+        return;
+
     board_[row][col] &= ~(1u << 4); // unmark cell first
     board_[row][col] ^= 1u << 5;
 
