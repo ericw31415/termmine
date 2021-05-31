@@ -31,7 +31,8 @@ namespace {
 enum Color {
     color_unopened = 1,
     color_flagged,
-    color_opened
+    color_opened,
+    color_mine
 };
 
 void define_colors()
@@ -39,6 +40,7 @@ void define_colors()
     init_pair(color_unopened, COLOR_BLACK, COLOR_WHITE);
     init_pair(color_flagged, COLOR_RED, COLOR_WHITE);
     init_pair(color_opened, COLOR_WHITE, COLOR_BLACK);
+    init_pair(color_mine, COLOR_BLACK, COLOR_RED);
 
     init_pair(color_unopened + 10, COLOR_BLACK, COLOR_YELLOW);
     init_pair(color_flagged + 10, COLOR_RED, COLOR_YELLOW);
@@ -119,17 +121,25 @@ void update_board(WINDOW* const board, const Game& game) noexcept
     for (int i = 0; i < game.rows(); ++i) {
         for (int j = 0; j < game.cols(); ++j) {
             if (game.is_open(i, j)) {
-                wattron(board, COLOR_PAIR(color_opened));
-                mvwaddch(board, i * 2 + 1, j * 2 + 1, ' ');
-                wattroff(board, COLOR_PAIR(3));
+                wmove(board, i * 2 + 1, j * 2 + 1);
+                if (game.has_mine(i, j)) {
+                    wattron(board, COLOR_PAIR(color_mine));
+                    waddch(board, '@');
+                    wattroff(board, COLOR_PAIR(color_mine));
+                } else {
+                    wattron(board, COLOR_PAIR(color_opened));
+                    const int adj_mines = game.num_adj_mines(i, j);
+                    waddch(board, adj_mines > 0 ? '0' + adj_mines : ' ');
+                    wattroff(board, COLOR_PAIR(color_opened));
+                }
             } else if (game.has_flag(i, j)) {
                 wattron(board, COLOR_PAIR(color_flagged));
                 mvwaddch(board, i * 2 + 1, j * 2 + 1, 'P');
-                wattroff(board, COLOR_PAIR(2));
+                wattroff(board, COLOR_PAIR(color_flagged));
             } else if (game.has_mark(i, j)) {
                 wattron(board, COLOR_PAIR(color_unopened));
                 mvwaddch(board, i * 2 + 1, j * 2 + 1, '?');
-                wattroff(board, COLOR_PAIR(1));
+                wattroff(board, COLOR_PAIR(color_unopened));
             } else {
                 wattron(board, COLOR_PAIR(color_unopened));
                 mvwaddch(board, i * 2 + 1, j * 2 + 1, ' ');
@@ -137,6 +147,7 @@ void update_board(WINDOW* const board, const Game& game) noexcept
             }
         }
     }
+
 #ifdef NDEBUG
     move(game.rows() * 2 + 4, 0);
     for (auto& row : game.board()) {
@@ -150,7 +161,7 @@ void update_board(WINDOW* const board, const Game& game) noexcept
 void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
 {
     wmove(board, cursor.y * 2 + 1, cursor.x * 2 + 1);
-    chtype attrs = winch(board);
+    const chtype attrs = winch(board);
     wchgat(board, 1, attrs, PAIR_NUMBER(attrs & A_COLOR) + 10, nullptr);
 }
 
@@ -158,7 +169,7 @@ void start_game()
 {
     clear();
     define_colors();
-    printw("Mines remaining: %d\n", COLOR_PAIRS);
+    printw("Mines remaining:\n");
     printw("Time:\n");
     refresh();
 

@@ -87,11 +87,21 @@ bool Game::has_mark(const int row, const int col) const noexcept
     return board_[row][col] & (1u << 4);
 }
 
+int Game::num_adj_mines(const int row, const int col) const noexcept
+{
+    return board_[row][col] & 0b1111u;
+}
+
 void Game::open_cell(const int row, const int col) noexcept
 {
-    // prevent opening cell unless unflagged and unmarked
-    if (!has_flag(row, col) && !has_mark(row, col))
-        board_[row][col] |= 1u << 6;
+    if (is_open(row, col) || has_flag(row, col) || has_mark(row,col))
+        return;
+
+    board_[row][col] |= 1u << 6; // set opened flag
+    if (num_adj_mines(row, col) == 0) {
+        for (auto& adj : adjacent_cells(row, col))
+            open_cell(adj.first, adj.second);
+    }
 }
 
 void Game::flag_cell(const int row, const int col) noexcept

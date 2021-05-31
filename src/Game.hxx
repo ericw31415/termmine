@@ -41,6 +41,7 @@ public:
     bool is_open(int row, int col) const noexcept;
     bool has_flag(int row, int col) const noexcept;
     bool has_mark(int row, int col) const noexcept;
+    int num_adj_mines(int row, int col) const noexcept;
     void open_cell(int row, int col) noexcept;
     void flag_cell(int row, int col) noexcept;
     void mark_cell(int row, int col) noexcept;
