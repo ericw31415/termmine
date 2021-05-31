@@ -118,6 +118,7 @@ void draw_board(WINDOW* const board, const Game& game) noexcept
 
 void update_board(WINDOW* const board, const Game& game) noexcept
 {
+    mvprintw(0, 17, "%d", game.mines() - game.flags());
     for (int i = 0; i < game.rows(); ++i) {
         for (int j = 0; j < game.cols(); ++j) {
             if (game.is_open(i, j)) {
@@ -149,11 +150,12 @@ void update_board(WINDOW* const board, const Game& game) noexcept
     }
 
 #ifdef NDEBUG
-    move(game.rows() * 2 + 4, 0);
-    for (auto& row : game.board()) {
+    for (int i = 0; auto& row : game.board()) {
+        move(i + 3, game.cols() * 2 + 3);
         for (auto col : row)
             printw("%02x ", col);
         addch('\n');
+        ++i;
     }
 #endif
 }
@@ -181,7 +183,7 @@ void start_game()
     wrefresh(board);
 
     Cursor cursor{0, 0};
-    while (true) {
+    while (!game.is_over()) {
         update_board(board, game);
         draw_cursor(board, cursor);
         wrefresh(board);
@@ -217,6 +219,19 @@ void start_game()
 
         case 'q':
             return;
+        }
+    }
+
+    update_board(board, game);
+    move(game.rows() * 2 + 4, 0);
+    printw("You exploded. Game over.\n");
+    wrefresh(board);
+    refresh();
+    while (true) {
+        int c = getch();
+        switch (c) {
+            case 'q':
+                return;
         }
     }
 }

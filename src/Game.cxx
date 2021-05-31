@@ -62,9 +62,24 @@ int Game::cols() const noexcept
     return cols_;
 }
 
+int Game::mines() const noexcept
+{
+    return mines_;
+}
+
 const std::vector<std::vector<unsigned char>>& Game::board() const noexcept
 {
     return board_;
+}
+
+bool Game::is_over() const noexcept
+{
+    return game_over_;
+}
+
+int Game::flags() const noexcept
+{
+    return flags_;
 }
 
 bool Game::has_mine(const int row, const int col) const noexcept
@@ -98,6 +113,11 @@ void Game::open_cell(const int row, const int col) noexcept
         return;
 
     board_[row][col] |= 1u << 6; // set opened flag
+    if (has_mine(row, col)) {
+        game_over_ = true;
+        return;
+    }
+
     if (num_adj_mines(row, col) == 0) {
         for (auto& adj : adjacent_cells(row, col))
             open_cell(adj.first, adj.second);
@@ -108,6 +128,11 @@ void Game::flag_cell(const int row, const int col) noexcept
 {
     board_[row][col] &= ~(1u << 4); // unmark cell first
     board_[row][col] ^= 1u << 5;
+
+    if ((board_[row][col] & (1u << 5)) == 1u << 5)
+        ++flags_;
+    else
+        --flags_;
 }
 
 void Game::mark_cell(const int row, const int col) noexcept

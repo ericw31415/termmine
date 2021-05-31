@@ -35,13 +35,18 @@ public:
 
     int rows() const noexcept;
     int cols() const noexcept;
+    int mines() const noexcept;
     const std::vector<std::vector<unsigned char>>& board() const noexcept;
+
+    bool is_over() const noexcept;
+    int flags() const noexcept;
 
     bool has_mine(int row, int col) const noexcept;
     bool is_open(int row, int col) const noexcept;
     bool has_flag(int row, int col) const noexcept;
     bool has_mark(int row, int col) const noexcept;
     int num_adj_mines(int row, int col) const noexcept;
+
     void open_cell(int row, int col) noexcept;
     void flag_cell(int row, int col) noexcept;
     void mark_cell(int row, int col) noexcept;
@@ -63,6 +68,9 @@ private:
     * Number of adjacent mines - 4 bits
     */
     std::vector<std::vector<unsigned char>> board_;
+
+    bool game_over_ = false;
+    int flags_ = 0;
 
     void set_mine(int row, int col) noexcept;
     std::vector<std::pair<int, int>> adjacent_cells(int row, int col)
