@@ -76,10 +76,11 @@ private:
     int cells_flagged_ = 0;
     int open_cells_ = 0;
 
-    void set_mine(int row, int col) noexcept;
+    void toggle_mine(int row, int col) noexcept;
     std::vector<std::pair<int, int>> adjacent_cells(int row, int col)
         const noexcept;
     void set_adj_mines_count(int row, int col) noexcept;
+    std::pair<int, int> first_open_cell() const noexcept;
 };
 }
 
