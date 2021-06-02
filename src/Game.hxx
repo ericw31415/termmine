@@ -25,6 +25,7 @@
 #ifndef GAME_HXX
 #define GAME_HXX
 
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -41,7 +42,9 @@ public:
     bool is_over() const noexcept;
     bool has_won() const noexcept;
     int flags() const noexcept;
-    void check_win() noexcept;
+
+    // Pass in coordinates of just-opened cell
+    void check_win(int row, int col) noexcept;
 
     bool has_mine(int row, int col) const noexcept;
     bool is_open(int row, int col) const noexcept;
@@ -49,7 +52,7 @@ public:
     bool has_mark(int row, int col) const noexcept;
     int num_adj_mines(int row, int col) const noexcept;
 
-    void open_cell(int row, int col) noexcept;
+    void open_cell(int row, int col);
     void flag_cell(int row, int col) noexcept;
     void mark_cell(int row, int col) noexcept;
 
@@ -80,7 +83,12 @@ private:
     std::vector<std::pair<int, int>> adjacent_cells(int row, int col)
         const noexcept;
     void set_adj_mines_count(int row, int col) noexcept;
-    std::pair<int, int> first_open_cell() const noexcept;
+    std::pair<int, int> first_open_cell() const;
+};
+
+class BadGameState final : public std::logic_error {
+public:
+    BadGameState(const char* what) : logic_error{what} {}
 };
 }
 

@@ -22,6 +22,7 @@
 * SOFTWARE.
 */
 
+#include <exception>
 #include <ncurses.h>
 #include "Game.hxx"
 #include "play.hxx"
@@ -196,9 +197,9 @@ void update_board(WINDOW* const board, const Game& game) noexcept
     }
 
 #ifdef NDEBUG
-    for (int i = 0; auto& row : game.board()) {
+    for (int i = 0; const auto& row : game.board()) {
         move(i + 3, game.cols() * 2 + 3);
-        for (auto col : row)
+        for (const auto col : row)
             printw("%02x ", col);
         addch('\n');
         ++i;
@@ -256,7 +257,7 @@ void new_game()
 
         case ' ':
             game.open_cell(cursor.y, cursor.x);
-            game.check_win();
+            game.check_win(cursor.y, cursor.x);
             break;
         case '1':
             game.flag_cell(cursor.y, cursor.x);
@@ -281,13 +282,20 @@ void new_game()
     refresh();
 }
 
-void game_menu()
+void game_menu() noexcept
 {
     while (true) {
-        new_game();
+        try {
+            new_game();
+        } catch (const std::exception& err) {
+            clear();
+            printw("Error: %s\n", err.what());
+            printw("You may attempt to play again or quit.\n\n");
+        }
 
         clrtoeol();
         printw("Play again?\n");
+        refresh();
         bool valid;
         do {
             valid = true;
