@@ -22,24 +22,23 @@
 * SOFTWARE.
 */
 
-#ifndef PLAY_HXX
-#define PLAY_HXX
+#ifndef TIMER_HXX
+#define TIMER_HXX
 
-#include "Game.hxx"
+#include <chrono>
 
 namespace termmine {
-struct Cursor {
-    int x;
-    int y;
+class Timer final {
+public:
+    void start() noexcept;
+    std::chrono::milliseconds::rep elapsed() const noexcept;
+
+private:
+    using clock_type = std::chrono::steady_clock;
+
+    bool started_ = false;
+    std::chrono::time_point<clock_type> start_;
 };
-
-void update_time(const Game& game) noexcept;
-void draw_board(WINDOW* board, const Game& game) noexcept;
-void update_board(WINDOW* board, const Game& game) noexcept;
-void draw_cursor(WINDOW* board, const Cursor& cursor) noexcept;
-
-void new_game();
-void game_menu() noexcept;
 }
 
 #endif

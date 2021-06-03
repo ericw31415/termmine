@@ -25,9 +25,11 @@
 #ifndef GAME_HXX
 #define GAME_HXX
 
+#include <chrono>
 #include <stdexcept>
 #include <utility>
 #include <vector>
+#include "Timer.hxx"
 
 namespace termmine {
 class Game final {
@@ -38,6 +40,7 @@ public:
     int cols() const noexcept;
     int mines() const noexcept;
     const std::vector<std::vector<unsigned char>>& board() const noexcept;
+    std::chrono::milliseconds::rep get_time() const noexcept;
 
     bool is_over() const noexcept;
     bool has_won() const noexcept;
@@ -73,6 +76,7 @@ private:
     * Number of adjacent mines - 4 bits
     */
     std::vector<std::vector<unsigned char>> board_;
+    Timer timer_;
 
     bool game_over_ = false;
     bool won_ = false;

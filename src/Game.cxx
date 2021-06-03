@@ -72,6 +72,11 @@ const std::vector<std::vector<unsigned char>>& Game::board() const noexcept
     return board_;
 }
 
+std::chrono::milliseconds::rep Game::get_time() const noexcept
+{
+    return timer_.elapsed();
+}
+
 bool Game::is_over() const noexcept
 {
     return game_over_;
@@ -132,6 +137,9 @@ void Game::open_cell(const int row, const int col)
 {
     if (is_open(row, col) || has_flag(row, col) || has_mark(row,col))
         return;
+
+    if (open_cells_ == 0)
+        timer_.start();
 
     board_[row][col] |= 1u << 6; // set opened flag
     ++open_cells_;

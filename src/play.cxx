@@ -23,7 +23,9 @@
 */
 
 #include <exception>
+#include <iomanip>
 #include <ncurses.h>
+#include <sstream>
 #include "Game.hxx"
 #include "play.hxx"
 
@@ -134,6 +136,19 @@ chtype decode_grid_symbol(const unsigned char encoded) noexcept
 }
 }
 
+void update_time(const Game& game) noexcept
+{
+    std::ostringstream oss;
+    auto time = game.get_time();
+    oss.fill('0');
+    if (time >= 60000)
+        oss << time / 60000 << ':' << std::setw(2);
+    oss << time % 60000 / 1000 << '.' << std::setw(3) << time % 1000;
+    move(1, 6);
+    clrtoeol();
+    printw("%s", oss.str().c_str());
+}
+
 void draw_board(WINDOW* const board, const Game& game) noexcept
 {
     for (int i = 0; i < game.rows() * 2 + 1; ++i) {
@@ -222,9 +237,9 @@ void new_game()
     printw("Time:\n");
     refresh();
 
-    termmine::Game game{4, 4, 2};
-    WINDOW* const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1, 3,
-                                 0);
+    termmine::Game game{9, 9, 10};
+    WINDOW *const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1,
+                                 3, 0);
 
     draw_board(board, game);
     wrefresh(board);
@@ -235,6 +250,8 @@ void new_game()
         update_board(board, game);
         draw_cursor(board, cursor);
         wrefresh(board);
+        update_time(game);
+        refresh();
 
         int c = getch();
         switch (c) {
