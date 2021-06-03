@@ -24,8 +24,10 @@
 
 #include <exception>
 #include <iomanip>
-#include <ncurses.h>
 #include <sstream>
+
+#include <ncurses.h>
+
 #include "Game.hxx"
 #include "play.hxx"
 

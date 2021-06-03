@@ -23,6 +23,7 @@
 */
 
 #include "Timer.hxx"
+
 #include <chrono>
 
 namespace termmine {

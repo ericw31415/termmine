@@ -22,8 +22,8 @@
 * SOFTWARE.
 */
 
-#ifndef PLAY_HXX
-#define PLAY_HXX
+#ifndef TERMMINE_PLAY_HXX
+#define TERMMINE_PLAY_HXX
 
 #include "Game.hxx"
 

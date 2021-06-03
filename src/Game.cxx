@@ -23,6 +23,7 @@
 */
 
 #include "Game.hxx"
+
 #include <algorithm>
 #include <random>
 #include <utility>

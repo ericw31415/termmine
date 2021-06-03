@@ -22,8 +22,8 @@
 * SOFTWARE.
 */
 
-#ifndef TIMER_HXX
-#define TIMER_HXX
+#ifndef TERMMINE_TIMER_HXX
+#define TERMMINE_TIMER_HXX
 
 #include <chrono>
 

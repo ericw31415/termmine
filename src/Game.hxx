@@ -22,13 +22,14 @@
 * SOFTWARE.
 */
 
-#ifndef GAME_HXX
-#define GAME_HXX
+#ifndef TERMMINE_GAME_HXX
+#define TERMMINE_GAME_HXX
 
 #include <chrono>
 #include <stdexcept>
 #include <utility>
 #include <vector>
+
 #include "Timer.hxx"
 
 namespace termmine {

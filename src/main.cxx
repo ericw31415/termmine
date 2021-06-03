@@ -23,6 +23,7 @@
 */
 
 #include <ncurses.h>
+
 #include "play.hxx"
 
 int main()
