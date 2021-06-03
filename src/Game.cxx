@@ -166,6 +166,21 @@ void Game::open_cell(const int row, const int col)
     }
 }
 
+void Game::chord_cell(const int row, const int col)
+{
+    if (!is_open(row, col))
+        return;
+
+    int flags = 0;
+    for (const auto& adj : adjacent_cells(row, col))
+        flags += has_flag(adj.first, adj.second);
+    if (flags != num_adj_mines(row, col))
+        return;
+
+    for (const auto& adj : adjacent_cells(row, col))
+        open_cell(adj.first, adj.second);
+}
+
 void Game::flag_cell(const int row, const int col) noexcept
 {
     if (is_open(row, col))

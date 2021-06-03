@@ -57,6 +57,7 @@ public:
     int num_adj_mines(int row, int col) const noexcept;
 
     void open_cell(int row, int col);
+    void chord_cell(int row, int col);
     void flag_cell(int row, int col) noexcept;
     void mark_cell(int row, int col) noexcept;
 

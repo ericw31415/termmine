@@ -275,7 +275,10 @@ void new_game()
             break;
 
         case ' ':
-            game.open_cell(cursor.y, cursor.x);
+            if (game.is_open(cursor.y, cursor.x))
+                game.chord_cell(cursor.y, cursor.x);
+            else
+                game.open_cell(cursor.y, cursor.x);
             game.check_win(cursor.y, cursor.x);
             break;
         case '1':
