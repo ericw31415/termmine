@@ -33,13 +33,15 @@ struct Cursor {
     int y;
 };
 
+void define_colors() noexcept;
 void update_time(const Game& game) noexcept;
 void draw_board(WINDOW* board, const Game& game) noexcept;
 void update_board(WINDOW* board, const Game& game) noexcept;
 void draw_cursor(WINDOW* board, const Cursor& cursor) noexcept;
 
-void new_game();
+void new_game(int height, int width, int mines);
 void game_menu() noexcept;
+void main_menu() noexcept;
 }
 
 #endif

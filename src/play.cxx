@@ -50,36 +50,9 @@ enum Color {
     color_eight
 };
 
-void define_colors()
+constexpr chtype ctrl(const chtype c) noexcept
 {
-    init_pair(color_unopened, COLOR_BLACK, COLOR_WHITE);
-    init_pair(color_flagged, COLOR_RED, COLOR_WHITE);
-    init_pair(color_opened, COLOR_WHITE, COLOR_BLACK);
-    init_pair(color_mine, COLOR_BLACK, COLOR_RED);
-    init_pair(color_mine_wrong, COLOR_RED, COLOR_BLACK);
-
-    // Cell number colors
-    init_pair(color_one, COLOR_BLUE, COLOR_BLACK);
-    init_pair(color_two, COLOR_GREEN, COLOR_BLACK);
-    init_pair(color_three, COLOR_RED, COLOR_BLACK);
-    init_pair(color_four, COLOR_MAGENTA, COLOR_BLACK);
-    init_pair(color_five, COLOR_RED, COLOR_BLACK);
-    init_pair(color_six, COLOR_CYAN, COLOR_BLACK);
-    init_pair(color_seven, COLOR_WHITE, COLOR_BLACK);
-    init_pair(color_eight, COLOR_WHITE, COLOR_BLACK);
-
-    init_pair(color_unopened + 20, COLOR_BLACK, COLOR_YELLOW);
-    init_pair(color_flagged + 20, COLOR_RED, COLOR_YELLOW);
-    init_pair(color_opened + 20, COLOR_WHITE, COLOR_YELLOW);
-
-    init_pair(color_one + 20, COLOR_BLUE, COLOR_YELLOW);
-    init_pair(color_two + 20, COLOR_GREEN, COLOR_YELLOW);
-    init_pair(color_three + 20, COLOR_RED, COLOR_YELLOW);
-    init_pair(color_four + 20, COLOR_MAGENTA, COLOR_YELLOW);
-    init_pair(color_five + 20, COLOR_RED, COLOR_YELLOW);
-    init_pair(color_six + 20, COLOR_CYAN, COLOR_YELLOW);
-    init_pair(color_seven + 20, COLOR_WHITE, COLOR_YELLOW);
-    init_pair(color_eight + 20, COLOR_WHITE, COLOR_YELLOW);
+    return c & 0x1f;
 }
 
 /*
@@ -136,6 +109,38 @@ chtype decode_grid_symbol(const unsigned char encoded) noexcept
         return ' ';
     }
 }
+}
+
+void define_colors() noexcept
+{
+    init_pair(color_unopened, COLOR_BLACK, COLOR_WHITE);
+    init_pair(color_flagged, COLOR_RED, COLOR_WHITE);
+    init_pair(color_opened, COLOR_WHITE, COLOR_BLACK);
+    init_pair(color_mine, COLOR_BLACK, COLOR_RED);
+    init_pair(color_mine_wrong, COLOR_RED, COLOR_BLACK);
+
+    // Cell number colors
+    init_pair(color_one, COLOR_BLUE, COLOR_BLACK);
+    init_pair(color_two, COLOR_GREEN, COLOR_BLACK);
+    init_pair(color_three, COLOR_RED, COLOR_BLACK);
+    init_pair(color_four, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(color_five, COLOR_RED, COLOR_BLACK);
+    init_pair(color_six, COLOR_CYAN, COLOR_BLACK);
+    init_pair(color_seven, COLOR_WHITE, COLOR_BLACK);
+    init_pair(color_eight, COLOR_WHITE, COLOR_BLACK);
+
+    init_pair(color_unopened + 20, COLOR_BLACK, COLOR_YELLOW);
+    init_pair(color_flagged + 20, COLOR_RED, COLOR_YELLOW);
+    init_pair(color_opened + 20, COLOR_WHITE, COLOR_YELLOW);
+
+    init_pair(color_one + 20, COLOR_BLUE, COLOR_YELLOW);
+    init_pair(color_two + 20, COLOR_GREEN, COLOR_YELLOW);
+    init_pair(color_three + 20, COLOR_RED, COLOR_YELLOW);
+    init_pair(color_four + 20, COLOR_MAGENTA, COLOR_YELLOW);
+    init_pair(color_five + 20, COLOR_RED, COLOR_YELLOW);
+    init_pair(color_six + 20, COLOR_CYAN, COLOR_YELLOW);
+    init_pair(color_seven + 20, COLOR_WHITE, COLOR_YELLOW);
+    init_pair(color_eight + 20, COLOR_WHITE, COLOR_YELLOW);
 }
 
 void update_time(const Game& game) noexcept
@@ -231,7 +236,7 @@ void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
     wchgat(board, 1, attrs, PAIR_NUMBER(attrs & A_COLOR) + 20, nullptr);
 }
 
-void new_game()
+void new_game(const int rows, const int cols, const int mines)
 {
     clear();
     define_colors();
@@ -239,7 +244,7 @@ void new_game()
     printw("Time:\n");
     refresh();
 
-    termmine::Game game{9, 9, 10};
+    termmine::Game game{rows, cols, mines};
     WINDOW *const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1,
                                  3, 0);
 
@@ -288,7 +293,7 @@ void new_game()
             game.mark_cell(cursor.y, cursor.x);
             break;
 
-        case 'q':
+        case ctrl('q'):
             move(game.rows() * 2 + 4, 0);
             return;
         }
@@ -304,11 +309,11 @@ void new_game()
     refresh();
 }
 
-void game_menu() noexcept
+void game_menu(const int rows, const int cols, const int mines) noexcept
 {
     while (true) {
         try {
-            new_game();
+            new_game(rows, cols, mines);
         } catch (const std::exception& err) {
             clear();
             printw("Error: %s\n", err.what());
@@ -316,21 +321,85 @@ void game_menu() noexcept
         }
 
         clrtoeol();
-        printw("Play again?\n");
+        printw("Play again? (y/n)\n");
         refresh();
         bool valid;
         do {
             valid = true;
             int c = getch();
             switch (c) {
-                case 'n':
+                case 'y':
                     break;
-                case 'q':
+                case 'n':
                     return;
                 default:
                     valid = false;
             }
         } while (!valid);
+    }
+}
+
+void main_menu() noexcept
+{
+    while (true) {
+        clear();
+        attron(A_BOLD);
+        printw("@ ");
+        addch('T' | COLOR_PAIR(color_one));
+        addch('e' | COLOR_PAIR(color_two));
+        addch('r' | COLOR_PAIR(color_three));
+        addch('m' | COLOR_PAIR(color_four));
+        attron(COLOR_PAIR(color_flagged));
+        printw("Mine");
+        attroff(COLOR_PAIR(color_flagged));
+        printw(" @\n\n");
+        attroff(A_BOLD);
+
+        printw("Beginner\t9 x 9\t\t10 mines\n");
+        printw("Intermediate\t16 x 16\t\t40 mines\n");
+        printw("Advanced\t16 x 30\t\t99 mines\n");
+        printw("Quit\n");
+
+        int option = 0;
+        bool option_selected = false;
+        while (!option_selected) {
+            mvchgat(option + 2, 0, -1, A_REVERSE, 0, nullptr);
+
+            int c = getch();
+            mvchgat(option + 2, 0, -1, A_NORMAL, 0, nullptr);
+            switch (c) {
+            case KEY_UP:
+                if (option > 0)
+                    --option;
+                else
+                    option = 3;
+                break;
+            case KEY_DOWN:
+                if (option < 3)
+                    ++option;
+                else
+                    option = 0;
+                break;
+
+            case ctrl('j'):
+                option_selected = true;
+                move(10, 0);
+                clrtoeol();
+                switch (option) {
+                case 0:
+                    game_menu(9, 9, 10);
+                    break;
+                case 1:
+                    game_menu(16, 16, 40);
+                    break;
+                case 2:
+                    game_menu(16, 30, 99);
+                    break;
+                case 3:
+                    return;
+                }
+            }
+        }
     }
 }
 }
