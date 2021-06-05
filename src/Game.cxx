@@ -24,6 +24,8 @@
 
 #include "Game.hxx"
 
+#include <cstdint>
+
 #include <algorithm>
 #include <random>
 #include <utility>
@@ -31,9 +33,14 @@
 
 namespace termmine {
 Game::Game(const int rows, const int cols, const int mines) noexcept
+    : Game{rows, cols, mines, std::random_device{}} {}
+
+Game::Game(const int rows, const int cols, const int mines,
+           const std::uint_fast64_t seed) noexcept
     : rows_{rows},
       cols_{cols},
       mines_{mines},
+      seed_{seed},
       board_(rows, std::vector<unsigned char>(cols, 0))
 {
     // Assign a number to each cell and randomize mine placement
@@ -42,7 +49,7 @@ Game::Game(const int rows, const int cols, const int mines) noexcept
     for (int i = 0; i < rows * cols; ++i)
         cells.push_back(i);
 
-    std::mt19937 gen{std::random_device{}()};
+    std::mt19937_64 gen{seed_};
     std::ranges::shuffle(cells, gen);
     for (int i = 0; i < mines; ++i)
         toggle_mine(cells[i] / cols, cells[i] % cols);
@@ -52,6 +59,11 @@ Game::Game(const int rows, const int cols, const int mines) noexcept
             set_adj_mines_count(i, j);
     }
 }
+
+Game::Game(const int rows, const int cols, const int mines,
+           std::random_device&& rd) noexcept
+    : Game{rows, cols, mines,
+        static_cast<std::uint_fast64_t>(rd()) << 32 | rd()} {}
 
 int Game::rows() const noexcept
 {
@@ -66,6 +78,11 @@ int Game::cols() const noexcept
 int Game::mines() const noexcept
 {
     return mines_;
+}
+
+std::uint_fast64_t Game::seed() const noexcept
+{
+    return seed_;
 }
 
 const std::vector<std::vector<unsigned char>>& Game::board() const noexcept
@@ -99,7 +116,7 @@ void Game::check_win(const int row, const int col) noexcept
         won_ = true;
         game_over_ = true;
 
-        // autoflag all unflagged cells
+        // Autoflag all unflagged cells
         for (int i = 0; i < rows_; ++i) {
             for (int j = 0; j < cols_; ++j) {
                 if (has_mine(i, j) && !has_flag(i, j))
@@ -147,7 +164,7 @@ void Game::open_cell(const int row, const int col)
     if (has_mine(row, col)) {
         if (open_cells_ == 1) {
             // Prevent a first-move loss
-            std::pair <int, int> open_cell = first_open_cell();
+            std::pair<int, int> open_cell{first_open_cell()};
             toggle_mine(open_cell.first, open_cell.second);
             toggle_mine(row, col);
             for (int i = 0; i < rows_; ++i) {
@@ -215,7 +232,7 @@ std::vector<std::pair<int, int>> Game::adjacent_cells(
         for (int j = col - 1; j <= col + 1; ++j) {
             if (i >= 0 && i < rows_ && j >= 0 && j < cols_
                 && (i != row || j != col))
-            adj.push_back(std::make_pair(i, j));
+            adj.push_back({i, j});
         }
     }
     return adj;
@@ -228,7 +245,7 @@ void Game::set_adj_mines_count(const int row, const int col) noexcept
         if (has_mine(adj.first, adj.second))
             ++num_mines;
     }
-    board_[row][col] &= ~(0b1111u);
+    board_[row][col] &= ~0b1111u;
     board_[row][col] |= num_mines;
 }
 
@@ -237,7 +254,7 @@ std::pair<int, int> Game::first_open_cell() const
     for (int i = 0; i < rows_; ++i) {
         for (int j = 0; j < rows_; ++j) {
             if (!has_mine(i, j))
-                return std::make_pair(i, j);
+                return {i, j};
         }
     }
     throw BadGameState("No safe cells present in board");

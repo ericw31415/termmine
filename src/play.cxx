@@ -22,15 +22,21 @@
 * SOFTWARE.
 */
 
+#include "play.hxx"
+
+#include <cinttypes>
+
+#include <array>
 #include <exception>
 #include <iomanip>
+#include <optional>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include <ncurses.h>
 
 #include "Game.hxx"
-#include "play.hxx"
 
 namespace termmine {
 namespace {
@@ -50,11 +56,6 @@ enum Color {
     color_seven,
     color_eight
 };
-
-constexpr int ctrl(const int c) noexcept
-{
-    return c & 0x1f;
-}
 
 /*
 * Encode grid position to simplify draw_board() conditionals.
@@ -112,6 +113,11 @@ chtype decode_grid_symbol(const unsigned char encoded) noexcept
 }
 }
 
+constexpr int ctrl(const int c) noexcept
+{
+    return c & 0x1f;
+}
+
 void define_colors() noexcept
 {
     init_pair(color_unopened, COLOR_BLACK, COLOR_WHITE);
@@ -142,51 +148,6 @@ void define_colors() noexcept
     init_pair(color_six + 20, COLOR_CYAN, COLOR_YELLOW);
     init_pair(color_seven + 20, COLOR_WHITE, COLOR_YELLOW);
     init_pair(color_eight + 20, COLOR_WHITE, COLOR_YELLOW);
-}
-
-int get_valid_num(const int prompt_len) noexcept
-{
-    curs_set(1);
-    keypad(stdscr, false);
-
-    int num{};
-    bool valid = false;
-
-    do {
-        std::string input;
-        int c{};
-        while ((c = getch()) != '\n') {
-            addch(c);
-            input.push_back(c);
-        }
-        addch('\n');
-
-        std::istringstream iss{input};
-        iss >> num;
-        if (iss && iss.eof() && num > 0) {
-            valid = true;
-            clrtoeol();
-        } else {
-            printw("Invalid input. Try again.");
-            move(getcury(stdscr) - 1, prompt_len);
-            clrtoeol();
-        }
-    } while (!valid);
-
-    keypad(stdscr, true);
-    curs_set(0);
-    return num;
-}
-
-void create_custom_board() noexcept
-{
-    printw("Number of rows: ");
-    int rows = get_valid_num(16);
-    printw("Number of columns: ");
-    int cols = get_valid_num(19);
-    printw("Number of mines: ");
-    int mines = get_valid_num(17);
-    game_menu(rows, cols, mines);
 }
 
 void update_time(const Game& game) noexcept
@@ -266,7 +227,7 @@ void update_board(WINDOW* const board, const Game& game) noexcept
 
 #ifdef NDEBUG
     for (int i = 0; const auto& row : game.board()) {
-        move(i + 3, game.cols() * 2 + 3);
+        move(i + 5, game.cols() * 2 + 3);
         for (const auto col : row)
             printw("%02x ", col);
         addch('\n');
@@ -275,24 +236,35 @@ void update_board(WINDOW* const board, const Game& game) noexcept
 #endif
 }
 
-void draw_cursor(WINDOW* const board, const Cursor& cursor) noexcept
+void draw_cursor(WINDOW* const board, const Cursor cursor) noexcept
 {
     wmove(board, cursor.y * 2 + 1, cursor.x * 2 + 1);
     const chtype attrs = winch(board);
     wchgat(board, 1, attrs, PAIR_NUMBER(attrs & A_COLOR) + 20, nullptr);
 }
 
-void new_game(const int rows, const int cols, const int mines)
+void show_seed(const Game& game) noexcept
+{
+    mvprintw(3, game.cols() * 2 + 3, "Seed: %" PRIuFAST64 "\n", game.seed());
+}
+
+void new_game(const int rows, const int cols, const int mines,
+              const std::optional<std::uint_fast64_t> seed)
 {
     clear();
     define_colors();
+    refresh();
     printw("Mines remaining:\n");
     printw("Time:\n");
-    refresh();
 
-    termmine::Game game{rows, cols, mines};
+    Game game{seed ? Game{rows, cols, mines, *seed} : Game{rows, cols, mines}};
     WINDOW *const board = newwin(game.rows() * 2 + 1, game.cols() * 2 + 1,
                                  3, 0);
+
+#ifdef NDEBUG
+    show_seed(game);
+    refresh();
+#endif
 
     draw_board(board, game);
     wrefresh(board);
@@ -300,11 +272,11 @@ void new_game(const int rows, const int cols, const int mines)
     Cursor cursor{0, 0};
     wattron(board, A_BOLD);
     while (!game.is_over()) {
+        update_time(game);
+        refresh();
         update_board(board, game);
         draw_cursor(board, cursor);
         wrefresh(board);
-        update_time(game);
-        refresh();
 
         int c = getch();
         switch (c) {
@@ -340,37 +312,34 @@ void new_game(const int rows, const int cols, const int mines)
             break;
 
         case ctrl('q'):
+            show_seed(game);
+            refresh();
             move(game.rows() * 2 + 4, 0);
             return;
         }
     }
 
     update_board(board, game);
+    wrefresh(board);
+    show_seed(game);
     move(game.rows() * 2 + 4, 0);
     if (game.has_won())
         printw("You swept through the minefield safely. You won!\n");
     else
         printw("You exploded. Game over.\n");
-    wrefresh(board);
     refresh();
 }
 
-void game_menu(const int rows, const int cols, const int mines) noexcept
+void game_menu(const int rows, const int cols, const int mines,
+               const std::optional<std::uint_fast64_t> seed)
 {
     while (true) {
-        try {
-            nodelay(stdscr, true);
-            new_game(rows, cols, mines);
-            nodelay(stdscr, false);
-        } catch (const std::exception& err) {
-            clear();
-            printw("Error: %s\n", err.what());
-            printw("You may attempt to play again or quit.\n\n");
-        }
+        nodelay(stdscr, true);
+        new_game(rows, cols, mines, seed);
+        nodelay(stdscr, false);
 
         clrtoeol();
         printw("Play again? (y/n)\n");
-        refresh();
         bool valid{};
         do {
             valid = true;
@@ -387,10 +356,100 @@ void game_menu(const int rows, const int cols, const int mines) noexcept
     }
 }
 
+void create_custom_board()
+{
+    const std::array<const std::string, 4> prompts{
+        "Number of rows: ",
+        "Number of columns: ",
+        "Number of mines: ",
+        "Seed (leave blank for random): "};
+    auto size_validate = [](std::istringstream& iss, std::optional<int>& num)
+        -> bool
+        {
+            int tmp{};
+            iss >> tmp;
+            num = tmp;
+            return iss && iss.eof() && tmp > 0;
+        };
+
+    printw(prompts[0].c_str());
+    auto rows = get_valid_num<int>(prompts[0].length(), size_validate);
+
+    printw(prompts[1].c_str());
+    auto cols = get_valid_num<int>(prompts[1].length(), size_validate);
+
+    printw(prompts[2].c_str());
+    auto mines = get_valid_num<int>(prompts[2].length(), size_validate);
+
+    printw(prompts[3].c_str());
+    auto seed = get_valid_num<std::uint_fast64_t>(
+        prompts[3].length(),
+        [](std::istringstream& iss, std::optional<std::uint_fast64_t>& num)
+            -> bool
+        {
+            if (iss.peek() == '-') // prevent negative wrapping
+                return false;
+            if (iss.eof()) // allow blank seed
+                return true;
+            std::uint_fast64_t tmp{};
+            iss >> tmp;
+            num = tmp;
+            return iss && iss.eof();
+        });
+
+    if (!rows || !cols || ! mines)
+        throw BadGameState{"Cannot specify rows, cols, or mines as blank"};
+
+    // Make sure at least one cell is safe
+    if (mines >= *rows * *cols)
+        mines = *rows * *cols - 1;
+
+    game_menu(*rows, *cols, *mines, seed);
+}
+
+void main_menu_select(int& option, const int num_options) noexcept
+{
+    bool option_chosen = false;
+    while (!option_chosen) {
+        mvchgat(option + 2, 0, -1, A_REVERSE, 0, nullptr);
+
+        int c = getch();
+        mvchgat(option + 2, 0, -1, A_NORMAL, 0, nullptr);
+        switch (c) {
+        case KEY_UP:
+            if (option == 0)
+                option = num_options - 1;
+            else
+                --option;
+            break;
+        case KEY_DOWN:
+            if (option == num_options)
+                option = 0;
+            else
+                ++option;
+            break;
+        case '\n':
+            option_chosen = true;
+        }
+    }
+}
+
 void main_menu() noexcept
 {
-    while (true) {
+    constexpr std::array options{
+        "Beginner\t9 x 9\t\t10 mines",
+        "Intermediate\t16 x 16\t\t40 mines",
+        "Advanced\t16 x 30\t\t99 mines",
+        "Custom board",
+        "Quit"
+    };
+
+    int option = 0; // remember chosen option after game ends
+    bool quit = false;
+    while (!quit) {
         clear();
+
+        // Draw title and menu options
         attron(A_BOLD);
         printw("@ ");
         addch('T' | COLOR_PAIR(color_one));
@@ -403,57 +462,37 @@ void main_menu() noexcept
         printw(" @\n\n");
         attroff(A_BOLD);
 
-        int num_options = 5;
-        printw("Beginner\t9 x 9\t\t10 mines\n");
-        printw("Intermediate\t16 x 16\t\t40 mines\n");
-        printw("Advanced\t16 x 30\t\t99 mines\n");
-        printw("Custom board size\n");
-        printw("Quit\n");
-        refresh();
+        for (const auto opt : options) {
+            printw(opt);
+            addch('\n');
+        }
 
-        int option = 0;
-        bool option_selected = false;
-        while (!option_selected) {
-            mvchgat(option + 2, 0, -1, A_REVERSE, 0, nullptr);
-
-            int c = getch();
-            mvchgat(option + 2, 0, -1, A_NORMAL, 0, nullptr);
-            switch (c) {
-            case KEY_UP:
-                if (option > 0)
-                    --option;
-                else
-                    option = num_options - 1;
+        // Option select
+        main_menu_select(option, options.size());
+        try {
+            switch (option) {
+            case 0:
+                game_menu(9, 9, 10);
                 break;
-            case KEY_DOWN:
-                if (option < num_options - 1)
-                    ++option;
-                else
-                    option = 0;
+            case 1:
+                game_menu(16, 16, 40);
                 break;
-
-            case '\n':
-                option_selected = true;
-                move(10, 0);
-                clrtoeol();
-                switch (option) {
-                case 0:
-                    game_menu(9, 9, 10);
-                    break;
-                case 1:
-                    game_menu(16, 16, 40);
-                    break;
-                case 2:
-                    game_menu(16, 30, 99);
-                    break;
-                case 3:
-                    move(num_options + 3, 0);
-                    create_custom_board();
-                    break;
-                default:
-                    return;
-                }
+            case 2:
+                game_menu(16, 30, 99);
+                break;
+            case 3:
+                move(options.size() + 3, 0);
+                create_custom_board();
+                break;
+            default:
+                return;
             }
+        } catch (const BadGameState& err) {
+            clear();
+            printw("Error: %s\n", err.what());
+            printw("Press any key to exit...");
+            getch();
+            return;
         }
     }
 }

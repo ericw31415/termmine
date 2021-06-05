@@ -25,7 +25,10 @@
 #ifndef TERMMINE_GAME_HXX
 #define TERMMINE_GAME_HXX
 
+#include <cstdint>
+
 #include <chrono>
+#include <random>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -36,12 +39,14 @@ namespace termmine {
 class Game final {
 public:
     Game(int rows, int cols, int mines) noexcept;
+    Game(int rows, int cols, int mines, std::uint_fast64_t seed) noexcept;
 
     int rows() const noexcept;
     int cols() const noexcept;
     int mines() const noexcept;
     const std::vector<std::vector<unsigned char>>& board() const noexcept;
     std::chrono::milliseconds::rep get_time() const noexcept;
+    std::uint_fast64_t seed() const noexcept;
 
     bool is_over() const noexcept;
     bool has_won() const noexcept;
@@ -62,10 +67,13 @@ public:
     void mark_cell(int row, int col) noexcept;
 
 private:
+    Game(int rows, int cols, int mines, std::random_device&& rd) noexcept;
+
     const int rows_;
     const int cols_;
 
     const int mines_;
+    const std::uint_fast64_t seed_;
 
     /*
     * Uses bit packing to store each cell's information. Each bit represents,

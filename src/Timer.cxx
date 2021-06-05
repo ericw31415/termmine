@@ -29,7 +29,7 @@
 namespace termmine {
 void Timer::start() noexcept
 {
-    started_=  true;
+    started_= true;
     start_ = clock_type::now();
 }
 

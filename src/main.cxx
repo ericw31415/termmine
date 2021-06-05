@@ -32,7 +32,7 @@ int main()
     noecho();
     raw();
     keypad(stdscr, true);
-    curs_set(0); // hide cursor and draw one manually later
+    curs_set(0); // hide cursor and manually draw one later
     start_color();
     termmine::define_colors();
     termmine::main_menu();
