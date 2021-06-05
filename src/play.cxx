@@ -25,6 +25,7 @@
 #include <exception>
 #include <iomanip>
 #include <sstream>
+#include <string>
 
 #include <ncurses.h>
 
@@ -50,7 +51,7 @@ enum Color {
     color_eight
 };
 
-constexpr chtype ctrl(const chtype c) noexcept
+constexpr int ctrl(const int c) noexcept
 {
     return c & 0x1f;
 }
@@ -141,6 +142,51 @@ void define_colors() noexcept
     init_pair(color_six + 20, COLOR_CYAN, COLOR_YELLOW);
     init_pair(color_seven + 20, COLOR_WHITE, COLOR_YELLOW);
     init_pair(color_eight + 20, COLOR_WHITE, COLOR_YELLOW);
+}
+
+int get_valid_num(const int prompt_len) noexcept
+{
+    curs_set(1);
+    keypad(stdscr, false);
+
+    int num{};
+    bool valid = false;
+
+    do {
+        std::string input;
+        int c{};
+        while ((c = getch()) != '\n') {
+            addch(c);
+            input.push_back(c);
+        }
+        addch('\n');
+
+        std::istringstream iss{input};
+        iss >> num;
+        if (iss && iss.eof() && num > 0) {
+            valid = true;
+            clrtoeol();
+        } else {
+            printw("Invalid input. Try again.");
+            move(getcury(stdscr) - 1, prompt_len);
+            clrtoeol();
+        }
+    } while (!valid);
+
+    keypad(stdscr, true);
+    curs_set(0);
+    return num;
+}
+
+void create_custom_board() noexcept
+{
+    printw("Number of rows: ");
+    int rows = get_valid_num(16);
+    printw("Number of columns: ");
+    int cols = get_valid_num(19);
+    printw("Number of mines: ");
+    int mines = get_valid_num(17);
+    game_menu(rows, cols, mines);
 }
 
 void update_time(const Game& game) noexcept
@@ -313,7 +359,9 @@ void game_menu(const int rows, const int cols, const int mines) noexcept
 {
     while (true) {
         try {
+            nodelay(stdscr, true);
             new_game(rows, cols, mines);
+            nodelay(stdscr, false);
         } catch (const std::exception& err) {
             clear();
             printw("Error: %s\n", err.what());
@@ -323,7 +371,7 @@ void game_menu(const int rows, const int cols, const int mines) noexcept
         clrtoeol();
         printw("Play again? (y/n)\n");
         refresh();
-        bool valid;
+        bool valid{};
         do {
             valid = true;
             int c = getch();
@@ -355,10 +403,13 @@ void main_menu() noexcept
         printw(" @\n\n");
         attroff(A_BOLD);
 
+        int num_options = 5;
         printw("Beginner\t9 x 9\t\t10 mines\n");
         printw("Intermediate\t16 x 16\t\t40 mines\n");
         printw("Advanced\t16 x 30\t\t99 mines\n");
+        printw("Custom board size\n");
         printw("Quit\n");
+        refresh();
 
         int option = 0;
         bool option_selected = false;
@@ -372,16 +423,16 @@ void main_menu() noexcept
                 if (option > 0)
                     --option;
                 else
-                    option = 3;
+                    option = num_options - 1;
                 break;
             case KEY_DOWN:
-                if (option < 3)
+                if (option < num_options - 1)
                     ++option;
                 else
                     option = 0;
                 break;
 
-            case ctrl('j'):
+            case '\n':
                 option_selected = true;
                 move(10, 0);
                 clrtoeol();
@@ -396,6 +447,10 @@ void main_menu() noexcept
                     game_menu(16, 30, 99);
                     break;
                 case 3:
+                    move(num_options + 3, 0);
+                    create_custom_board();
+                    break;
+                default:
                     return;
                 }
             }

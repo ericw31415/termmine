@@ -34,13 +34,15 @@ struct Cursor {
 };
 
 void define_colors() noexcept;
+int get_valid_num() noexcept;
+void create_custom_board() noexcept;
 void update_time(const Game& game) noexcept;
 void draw_board(WINDOW* board, const Game& game) noexcept;
 void update_board(WINDOW* board, const Game& game) noexcept;
 void draw_cursor(WINDOW* board, const Cursor& cursor) noexcept;
 
 void new_game(int height, int width, int mines);
-void game_menu() noexcept;
+void game_menu(int rows, int cols, int mines) noexcept;
 void main_menu() noexcept;
 }
 
