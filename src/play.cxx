@@ -423,7 +423,7 @@ void main_menu_select(int& option, const int num_options) noexcept
                 --option;
             break;
         case KEY_DOWN:
-            if (option == num_options)
+            if (option == num_options - 1)
                 option = 0;
             else
                 ++option;

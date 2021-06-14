@@ -18,6 +18,8 @@ if(CMAKE_CONFIGURATION_TYPES)
     string(REPLACE ";" ", " configs "${CMAKE_CONFIGURATION_TYPES}")
     message(STATUS "Found configurations: ${configs}")
 endif()
+message(STATUS "Building configuration ${CMAKE_BUILD_TYPE}")
+message(STATUS "Building for ${CMAKE_SYSTEM_NAME}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 message(STATUS "Building from ${CMAKE_SOURCE_DIR}")

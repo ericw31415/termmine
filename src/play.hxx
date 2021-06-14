@@ -77,11 +77,13 @@ std::optional<T> get_valid_num(const int prompt_len, Val&& validate) noexcept
     int ypos = getcury(stdscr);
 
     do {
+        clrtoeol();
+
         std::string input;
         int i = 0;
         int c{};
         while ((c = getch()) != '\n') {
-            if (c != 127) {
+            if (c != ctrl('h') && c != 127) {
                 addch(c);
                 input.push_back(c);
                 ++i;
@@ -104,7 +106,6 @@ std::optional<T> get_valid_num(const int prompt_len, Val&& validate) noexcept
             // Move to previous line
             move(ypos, prompt_len);
         }
-        clrtoeol();
     } while (!valid);
 
     keypad(stdscr, true);
